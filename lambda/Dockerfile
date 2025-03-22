@@ -13,4 +13,4 @@ RUN pip install -r requirements.txt
 COPY lambda_handler.py .
 
 
-CMD ["lambda_handler.lambda_handler"]
+CMD ["artist_data.lambda_handler"]
