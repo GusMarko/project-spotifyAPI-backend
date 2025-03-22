@@ -10,7 +10,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 
-COPY lambda_handler.py .
+COPY artist_data.py .
 
 
 CMD ["artist_data.lambda_handler"]
