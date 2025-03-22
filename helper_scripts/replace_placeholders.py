@@ -42,7 +42,7 @@ def replace_placeholders(curr_env, boto3_session):
     tfvars = tfvars.replace("client_id_placeholder", str(client_id))
     tfvars = tfvars.replace("client_secret_placeholder", str(client_secret))
     tfvars = tfvars.replace("image_uri_placeholder", str(image))
-    tfvars = tfvars.replace("key_path_networking_state_placeholder",  f"project-s-networking/{env}/terraform.tfstate")
+    tfvars = tfvars.replace("key_path_networking_state_placeholder",  f"project-s-networking/{curr_env}/terraform.tfstate")
     with open(tfvars_path, "w") as f:
         f.write(tfvars)
 
