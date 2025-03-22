@@ -20,13 +20,12 @@ def main ():
      
 
 def replace_placeholders(curr_env, boto3_session):
-    ecr_repo = f"lambda-images-{env}"
+    ecr_repo = f"lambda-images-{curr_env}"
     run_id = GITHUB_RUN_ID
     account_id = AWS_ACCOUNT_ID
     aws_region = AWS_REGION
     access_key = AWS_ACCESS_KEY
     secret_key = AWS_SECRET_ACCESS_KEY
-    env = curr_env
     tfvars_path = "../iac/terraform.tfvars"
     backend_path = "../iac/provider.tf"
     spotify_credentials = get_aws_secret("spotify/credentials/new", boto3_session)
@@ -39,7 +38,7 @@ def replace_placeholders(curr_env, boto3_session):
     tfvars = tfvars.replace("aws_region_placeholder", str(aws_region))
     tfvars = tfvars.replace("access_key_placeholder", str(access_key))
     tfvars = tfvars.replace("secret_key_placeholder", str(secret_key))
-    tfvars = tfvars.replace("env_placeholder", str(env))
+    tfvars = tfvars.replace("env_placeholder", str(curr_env))
     tfvars = tfvars.replace("client_id_placeholder", str(client_id))
     tfvars = tfvars.replace("client_secret_placeholder", str(client_secret))
     tfvars = tfvars.replace("image_uri_placeholder", str(image))
@@ -52,7 +51,7 @@ def replace_placeholders(curr_env, boto3_session):
     backend_config = backend_config.replace("access_key_placeholder", str(access_key))
     backend_config = backend_config.replace("secret_key_placeholder", str(secret_key))
     backend_config = backend_config.replace("aws_region_placeholder", str(aws_region))
-    backend_config = backend_config.replace("key_placeholder", f"project-s-backend/{env}/terraform.tfstate")
+    backend_config = backend_config.replace("key_placeholder", f"project-s-backend/{curr_env}/terraform.tfstate")
     with open(backend_path, "w") as f:
         f.write(backend_config)
 
