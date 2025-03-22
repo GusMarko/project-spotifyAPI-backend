@@ -1,0 +1,81 @@
+name: "build docker image and deploy lambda and backend aws resources"
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  IMAGE_NAME: "spotify-data"
+
+jobs:
+  ValidateAndBuildImage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Run Helper Script
+        id: pipeline_config
+        run: |
+          cd helper_scripts              
+          pip install boto3
+          python3 replace_placeholders.py
+
+      - name: Connect AWS Account
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          ws-access-key-id: ${{env.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{env.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Login to ECR
+        id: ecr_login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{env.IMAGE_NAME}}:$GITHUB_RUN_ID ./lambda/
+          docker tag ${{env.IMAGE_NAME}}:$GITHUB_RUN_ID ${{ steps.ecr_login.outputs.registry }}/${{ steps.pipeline_config.outputs.ecr_repo_name }}:$GITHUB_RUN_ID
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push ${{ steps.ecr_login.outputs.registry }}/${{ steps.pipeline_config.outputs.ecr_repo_name }}:$GITHUB_RUN_ID
+
+  DeployResources:
+    runs-on: ubuntu-latest
+    needs: ValidateAndBuildImage
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Run Helper Script
+        id: pipeline_config
+        run: |
+          cd helper_scripts              
+          pip install boto3
+          python3 replace_placeholders.py
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Deploy Resources
+        run: |
+          cd iac
+          terraform init 
+          terraform apply -auto-approve
