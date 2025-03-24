@@ -77,5 +77,10 @@ resource "aws_api_gateway_method_response" "options_response" {
 resource "aws_api_gateway_deployment" "deployment" {
   depends_on = [aws_api_gateway_integration.options_integration, aws_api_gateway_integration.get_integration]
   rest_api_id = aws_api_gateway_rest_api.spotify.id
+}
+
+resource "aws_api_gateway_stage" "stage" {
+  rest_api_id = aws_api_gateway_rest_api.spotify.id
+  deployment_id = aws_api_gateway_deployment.deployment.id
   stage_name = "${var.env}"
 }
