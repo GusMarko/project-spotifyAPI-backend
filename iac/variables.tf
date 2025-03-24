@@ -27,8 +27,3 @@ variable "client_secret" {
   type = string
     description = "spotify credentials"
 }
-
-variable "key_path_networking_state" {
-  type = string
-  description = "key path to networking tfstate file"
-}

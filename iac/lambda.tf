@@ -75,7 +75,7 @@ resource "aws_lambda_function" "lambda" {
   }
 
    vpc_config {
-    subnet_ids         = ["${data.terraform_remote_state.networking.outputs.debug}"]
+    subnet_ids         = ["${data.terraform_remote_state.networking.outputs.priv_sub_id}"]
     security_group_ids = ["${aws_security_group.lambda_sg.id}"]  
   }
 
@@ -87,7 +87,7 @@ resource "aws_lambda_function" "lambda" {
 resource "aws_security_group" "lambda_sg" {
   name        = "lambda-sg-${var.env}"
   description = "spotify lambda function"
-  vpc_id      = "${data.terraform_remote_state.networking.outputs.vpc2_id}"
+  vpc_id      = "${data.terraform_remote_state.networking.outputs.vpc_id}"
 
   egress {
     from_port   = 0
