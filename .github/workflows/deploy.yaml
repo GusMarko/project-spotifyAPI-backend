@@ -78,4 +78,5 @@ jobs:
         run: |
           cd iac
           terraform init 
+          terraform validate
           terraform apply -auto-approve
