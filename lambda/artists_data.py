@@ -140,7 +140,6 @@ def get_latestAlbum(base_url, artist_id, headers, artist):
 
 
 def store_data_in_dynamodb(artist, option, data):
-    print("Before storing in DB:", data, type(data))
     data = json.dumps(data)
     table.put_item(
         Item={
