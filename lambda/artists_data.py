@@ -4,11 +4,13 @@ import json
 import os
 import base64
 
+dynamodb = boto3.resource("dynamodb")
+table_name = os.environ.get("DYNAMODB_TABLE_NAME")
+table = dynamodb.Table(table_name)
+
 
 def lambda_handler(event, context):
-    dynamodb = boto3.resource("dynamodb")
-    table_name = os.environ.get("DYNAMODB_TABLE_NAME")
-    table = dynamodb.Table(table_name)
+
     print("Connected to table: ", table)
 
     SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
