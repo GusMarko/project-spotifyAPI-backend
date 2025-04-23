@@ -24,6 +24,9 @@ def lambda_handler(event, context):
     data_type = event['queryStringParameters'].get('type', '')
     print(f"Data Type : {data_type}")
 
+    # use case if artist name is empty
+    if not artist_name.strip():
+        return build_response(400, {"error": "Please provide an artist name."})
 
     # check if data is already in dynamodb 
     data = check_dynamodb(artist_name, data_type)
@@ -38,7 +41,6 @@ def lambda_handler(event, context):
     token = get_spotify_token(SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET)
     if not token:
         return build_response(500, {"error": "Failed to retrieve Spotify token."})
-
     
     # send request to spotify depending on data type
     data = get_data_from_spotify(artist_name, data_type, token)
@@ -51,10 +53,12 @@ def lambda_handler(event, context):
         print("Data Stored")
         return build_response(200, {"artist": artist_name, "type": data_type, "data": data})
     else:
-        return build_response(404, {"error": "No data found for the given artist"})
+        similar_artists = search_spotify_for_similar(artist_name, token)
+        if similar_artists:
+            return build_response(200, {"message": f"No exact match found for '{artist_name}'. Did you mean one of these?", "suggestions": similar_artists})
+        else:
+            return build_response(404, {"error": f"No data found for the artist '{artist_name}'. Please check the spelling."})
 
-
-    
 def check_dynamodb(artist, option):
     response = table.get_item(
         Key={'artistName': artist, 'dataType': option}
@@ -76,32 +80,51 @@ def get_spotify_token(id, secret):
     print(response_data)
     return response_data.get('access_token')
 
-
-
 def get_data_from_spotify(artist, option, token):
 
      base_url = "https://api.spotify.com/v1"
      headers = {"Authorization": f"Bearer {token}"}
 
      search_url = f"{base_url}/search"
-     params = {"q": artist, "type": "artist"}
+     params = {"q": artist, "type": "artist", "limit": 1}
      search_response = requests.get(search_url, headers=headers,params=params)
      search_data = search_response.json()
-     artist_id = search_data['artists']['items'][0]['id']
-     print(f"Artist Name : {artist}, Artist id : {artist_id}")
-     print(f"Search Option: {option}")
 
-     if option == 'bestSong':
-          print(f"Retrieving best song by {artist} ...")
-          return get_bestSong(base_url, artist_id, headers, artist)
-     elif option == 'topSongs':
-          print(f"Retrieving top tracks by {artist} ...")
-          return get_topSongs(base_url,artist_id, headers, artist)
-     elif option == 'latestAlbum':
-          print(f"Retrieving latest album by {artist} ...")
-          return get_latestAlbum(base_url, artist_id, headers, artist)
+     artists = search_data.get('artists', {}).get('items', [])
+     if artists:
+        artist_id = artists[0]['id']
+        artist_name_from_api = artists[0]['name'].lower() 
+        print(f"Artist Name: {artist}, Artist id: {artist_id}, Artist Name from Spotify: {artist_name_from_api}")
+        print(f"Search Option: {option}")
+
+     if artist.strip() == artist_name_from_api.strip():
+        if option == 'bestSong':
+            print(f"Retrieving best song by {artist} ...")
+            return get_bestSong(base_url, artist_id, headers, artist)
+        elif option == 'topSongs':
+            print(f"Retrieving top tracks by {artist} ...")
+            return get_topSongs(base_url,artist_id, headers, artist)
+        elif option == 'latestAlbum':
+            print(f"Retrieving latest album by {artist} ...")
+            return get_latestAlbum(base_url, artist_id, headers, artist)
+        else:
+            return None
+     else:
+        return None
 
 
+def search_spotify_for_similar(artist_name, token):
+    base_url = "https://api.spotify.com/v1"
+    headers = {"Authorization": f"Bearer {token}"}
+    search_url = f"{base_url}/search"
+    params = {"q": artist_name, "type": "artist", "limit": 5}
+    search_response = requests.get(search_url, headers=headers, params=params)
+    search_data = search_response.json()
+    artists = search_data.get('artists', {}).get('items', [])
+    if artists:
+        return [artist['name'] for artist in artists]
+    else:
+        return []
 
 def get_bestSong(base_url, artist_id, headers, artist):
 

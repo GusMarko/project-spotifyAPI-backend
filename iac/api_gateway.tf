@@ -54,9 +54,14 @@ resource "aws_api_gateway_integration_response" "options_response" {
     "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
+
+   depends_on = [
+    aws_api_gateway_integration.options_integration,
+    aws_api_gateway_method.options
+  ]
 }
 
-resource "aws_api_gateway_method_response" "options_response" {
+resource "aws_api_gateway_method_response" "options_response_200" {
   rest_api_id = aws_api_gateway_rest_api.spotify.id
   resource_id = aws_api_gateway_resource.search.id
   http_method = aws_api_gateway_method.options.http_method
@@ -71,6 +76,11 @@ resource "aws_api_gateway_method_response" "options_response" {
     "method.response.header.Access-Control-Allow-Methods" = true
     "method.response.header.Access-Control-Allow-Origin"  = true
   }
+
+  depends_on = [
+    aws_api_gateway_integration.options_integration,
+    aws_api_gateway_method.options
+  ]
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
